@@ -8,7 +8,11 @@ namespace PineAdaptor
     /// </summary>
     public class DataStorage
     {
-
+        /// <summary>
+        /// Retrieves data from pine Data Storage and transforms it to descriptors objects.
+        /// </summary>
+        /// <typeparam name="T">class of the descriptor (i.e. UserInfo)</typeparam>
+        /// <returns>List of all the specified descriptors found in the storage.</returns>
         public static List<T> GetDescriptors<T>()
         {
             List<Dictionary<string, string>> allParameters = new TestTable(typeof(T).Name).GetDataStorageValues();
@@ -20,11 +24,24 @@ namespace PineAdaptor
             return descriptors;
         }
 
+        /// <summary>
+        /// Retrieves data from pine Data Storage and transforms it to descriptors objects.
+        /// </summary>
+        /// <typeparam name="T">class of the descriptor (i.e. UserInfo)</typeparam>
+        /// <param name="indexes">rows indexes of the descriptors to retrieve (i.e. "5", "1;2;2;7"); "0" index in multiple indexes ("1;0;7") is not allowed</param>
+        /// <returns>List of the descriptors with specified row numbers found in the storage.</returns>
         public static List<T> GetDescriptors<T>(string indexes)
         {
             return GetDescriptors<T>(indexes, false);
         }
 
+        /// <summary>
+        /// Retrieves data from pine Data Storage and transforms it to descriptors objects.
+        /// </summary>
+        /// <typeparam name="T">class of the descriptor (i.e. UserInfo)</typeparam>
+        /// <param name="indexes">rows indexes of the descriptors to retrieve (i.e. "5", "1;2;2;7"); "0" index in multiple indexes ("1;0;7") is not allowed</param>
+        /// <param name="allowEmpty">specifies whether "0" index in multiple indexes (like "1;0;7") is allowed</param>
+        /// <returns>List of the descriptors with specified row numbers found in the storage.</returns>
         public static List<T> GetDescriptors<T>(string indexes, bool allowEmpty)
         {
             List<T> result = new List<T>();
@@ -83,6 +100,12 @@ namespace PineAdaptor
             return result;
         }
 
+        /// <summary>
+        /// Retrieves data from pine Data Storage and transforms it to the single descriptor object.
+        /// </summary>
+        /// <typeparam name="T">class of the descriptor (i.e. UserInfo)</typeparam>
+        /// <param name="index">row index of the descriptor to retrieve (i.e. "1", "5"); if "0", returns an empty descriptor.</param>
+        /// <returns>Descriptor for specified row number found in the storage or an empty (which all properties are null) descriptor.</returns>
         public static T GetDescriptor<T>(string index)
         {
             List<T> descriptors = GetDescriptors<T>(index, true);
