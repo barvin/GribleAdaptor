@@ -60,7 +60,7 @@ namespace PineAdaptor
                     {
                         if (iterationNumbers[i] == 0)
                         {
-                            descriptor = (T)Activator.CreateInstance(typeof(T), null);
+                            descriptor = (T)Activator.CreateInstance(typeof(T), new Dictionary<string, string>());
                         }
                         else
                         {

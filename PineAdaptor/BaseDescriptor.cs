@@ -17,7 +17,7 @@ namespace PineAdaptor
 
         public BaseDescriptor(Dictionary<string, string> data)
         {
-            if (data != null)
+            if ((data != null) && (data.Count == 0))
             {
                 this.data = data;
                 this.IsNotEmpty = true;
