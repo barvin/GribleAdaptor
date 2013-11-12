@@ -1,4 +1,4 @@
-PineAdaptor
+GribleAdaptor
 ===========
 
-C# adaptor library for Pine.
+C# adaptor library for Grible.
