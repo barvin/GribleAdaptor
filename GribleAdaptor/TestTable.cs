@@ -1,22 +1,23 @@
-﻿using Npgsql;
+﻿using System.Linq;
+using Npgsql;
 using System;
 using System.Collections.Generic;
 using System.Data;
 
-namespace PineAdaptor
+namespace GribleAdaptor
 {
     /// <summary>
-    /// Class that represents Test Table entity from Pine.
+    /// Class that represents Test Table entity from Grible.
     /// </summary>
     public class TestTable
     {
-        private string tableName;
-        private string productName;
+        private readonly string _tableName;
+        private readonly string _productName;
 
         public TestTable(string name)
         {
-            this.tableName = name;
-            this.productName = PineSettings.ProductName;
+            _tableName = name;
+            _productName = GribleSettings.ProductName;
         }
 
         private static NpgsqlConnection Connection { get; set; }
@@ -43,37 +44,36 @@ namespace PineAdaptor
         {
             var result = new Dictionary<string, string>();
 
-            DataSet ds = new DataSet();
-            DataTable dt = new DataTable();
+            var ds = new DataSet();
 
             try
             {
-                NpgsqlConnection conn = GetConnection();
+                var conn = GetConnection();
                 conn.Open();
 
-                string sql = ("SELECT k.name, v.value FROM keys as k JOIN values as v "
+                var sql = ("SELECT k.name, v.value FROM keys as k JOIN values as v "
                     + "ON v.keyid=k.id AND k.tableid =(SELECT id FROM tables WHERE type="
                     + "(SELECT id FROM tabletypes WHERE name='" + subTableType + "') AND parentid="
-                    + "(SELECT id FROM tables WHERE name='" + tableName + "' AND categoryid IN "
+                    + "(SELECT id FROM tables WHERE name='" + _tableName + "' AND categoryid IN "
                     + "(SELECT id FROM categories WHERE productid=" + "(SELECT id FROM products WHERE name='"
-                    + productName + "') AND type=(SELECT id FROM tabletypes WHERE name='table'))))");
+                    + _productName + "') AND type=(SELECT id FROM tabletypes WHERE name='table'))))");
 
                 var da = new NpgsqlDataAdapter(sql, conn);
                 ds.Reset();
                 da.Fill(ds);
-                dt = ds.Tables[0];
+                var dt = ds.Tables[0];
 
                 foreach (DataRow row in dt.Rows)
                 {
-                    string keyId = (string)row.ItemArray.GetValue(0);
-                    string value = (string)row.ItemArray.GetValue(1);
+                    var keyId = (string)row.ItemArray.GetValue(0);
+                    var value = (string)row.ItemArray.GetValue(1);
                     result.Add(keyId, value);
                 }
                 conn.Close();
             }
             catch (Exception e)
             {
-                PineSettings.ErHandler.OnAdaptorFail(e);
+                GribleSettings.ErHandler.OnAdaptorFail(e);
             }
             return result;
         }
@@ -81,88 +81,74 @@ namespace PineAdaptor
         /// <summary>
         /// Retrieves data from General sheet.
         /// </summary>
-        /// <returns>List of Dictionary<ParameterName, ParameterValue>.</returns>
+        /// <returns>List of Dictionary&lt;ParameterName, ParameterValue&gt;.</returns>
         public List<Dictionary<string, string>> GetGeneralTable()
         {
-            return GetValuesFromPine("table");
+            return GetValuesFromGrible("table");
         }
 
         internal List<Dictionary<string, string>> GetDataStorageValues()
         {
-            return GetValuesFromPine("storage");
+            return GetValuesFromGrible("storage");
         }
 
         internal Dictionary<int, Dictionary<string, string>> GetDataStorageValues(int[] iterationNumbers)
         {
-            return GetValuesFromPine(iterationNumbers);
+            return GetValuesFromGrible(iterationNumbers);
         }
 
-        private List<Dictionary<string, string>> GetValuesFromPine(string entityType)
+        private List<Dictionary<string, string>> GetValuesFromGrible(string entityType)
         {
             var result = new List<Dictionary<string, string>>();
             try
             {
-                NpgsqlConnection conn = GetConnection();
+                var conn = GetConnection();
                 conn.Open();
 
-                string nameColumn = "";
-                if (entityType.Equals("table"))
-                {
-                    nameColumn = "name";
-                }
-                else
-                {
-                    nameColumn = "classname";
-                }
+                var nameColumn = entityType.Equals("table") ? "name" : "classname";
 
-                DataSet ds = new DataSet();
-                DataTable dt = new DataTable();
+                var ds = new DataSet();
 
                 var keys = new Dictionary<int, string>();
-                string sql = "SELECT id, name FROM keys WHERE tableid="
-                    + "(SELECT id FROM tables WHERE " + nameColumn + "='" + tableName + "' AND type="
+                var sql = "SELECT id, name FROM keys WHERE tableid="
+                    + "(SELECT id FROM tables WHERE " + nameColumn + "='" + _tableName + "' AND type="
                     + "(SELECT id FROM tabletypes WHERE name='" + entityType + "') AND categoryid IN "
-                    + "(SELECT id FROM categories WHERE productid=(SELECT id FROM products WHERE name='" + productName
+                    + "(SELECT id FROM categories WHERE productid=(SELECT id FROM products WHERE name='" + _productName
                     + "')))";
                 var da = new NpgsqlDataAdapter(sql, conn);
                 ds.Reset();
                 da.Fill(ds);
-                dt = ds.Tables[0];
+                var dt = ds.Tables[0];
                 foreach (DataRow row in dt.Rows)
                 {
-                    int id = (int)row.ItemArray.GetValue(0);
-                    string name = (string)row.ItemArray.GetValue(1);
+                    var id = (int)row.ItemArray.GetValue(0);
+                    var name = (string)row.ItemArray.GetValue(1);
                     keys.Add(id, name);
                 }
 
-                var rowIds = new List<int>();
                 sql = "SELECT id FROM rows WHERE tableid=" + "(SELECT id FROM tables WHERE " + nameColumn
-                    + "='" + tableName + "' AND type=" + "(SELECT id FROM tabletypes WHERE name='" + entityType
+                    + "='" + _tableName + "' AND type=" + "(SELECT id FROM tabletypes WHERE name='" + entityType
                     + "') AND categoryid IN " + "(SELECT id FROM categories WHERE productid="
-                    + "(SELECT id FROM products WHERE name='" + productName + "'))) ORDER BY \"order\"";
+                    + "(SELECT id FROM products WHERE name='" + _productName + "'))) ORDER BY \"order\"";
                 da = new NpgsqlDataAdapter(sql, conn);
                 ds.Reset();
                 da.Fill(ds);
                 dt = ds.Tables[0];
-                foreach (DataRow row in dt.Rows)
-                {
-                    int id = (int)row.ItemArray.GetValue(0);
-                    rowIds.Add(id);
-                }
+                var rowIds = (from DataRow row in dt.Rows select (int) row.ItemArray.GetValue(0)).ToList();
 
-                for (int i = 0; i < rowIds.Count; i++)
+                foreach (var rowId in rowIds)
                 {
                     var iterRow = new Dictionary<string, string>();
 
-                    sql = "SELECT keyid, value FROM values WHERE rowid=" + rowIds[i];
+                    sql = "SELECT keyid, value FROM values WHERE rowid=" + rowId;
                     da = new NpgsqlDataAdapter(sql, conn);
                     ds.Reset();
                     da.Fill(ds);
                     dt = ds.Tables[0];
                     foreach (DataRow row in dt.Rows)
                     {
-                        int keyId = (int)row.ItemArray.GetValue(0);
-                        string value = (string)row.ItemArray.GetValue(1);
+                        var keyId = (int)row.ItemArray.GetValue(0);
+                        var value = (string)row.ItemArray.GetValue(1);
                         iterRow.Add(keys[keyId], value);
                     }
                     result.Add(iterRow);
@@ -172,47 +158,46 @@ namespace PineAdaptor
             }
             catch (Exception e)
             {
-                PineSettings.ErHandler.OnAdaptorFail(e);
+                GribleSettings.ErHandler.OnAdaptorFail(e);
             }
             if (result.Count == 0)
             {
-                PineSettings.ErHandler.OnAdaptorFail(new Exception("Pine error: " + entityType + " '" + tableName + "' is missing."));
+                GribleSettings.ErHandler.OnAdaptorFail(new Exception("Grible error: " + entityType + " '" + _tableName + "' is missing."));
             }
             return result;
         }
 
-        private Dictionary<int, Dictionary<string, string>> GetValuesFromPine(int[] iterationNumbers)
+        private Dictionary<int, Dictionary<string, string>> GetValuesFromGrible(IEnumerable<int> iterationNumbers)
         {
             var result = new Dictionary<int, Dictionary<string, string>>();
             try
             {
-                NpgsqlConnection conn = GetConnection();
+                var conn = GetConnection();
                 conn.Open();
-                DataSet ds = new DataSet();
-                DataTable dt = new DataTable();
+                var ds = new DataSet();
 
                 var keys = new Dictionary<int, string>();
                 string sql = "SELECT id, name FROM keys WHERE tableid="
-                        + "(SELECT id FROM tables WHERE classname='" + tableName + "' AND type="
+                        + "(SELECT id FROM tables WHERE classname='" + _tableName + "' AND type="
                         + "(SELECT id FROM tabletypes WHERE name='storage') AND categoryid IN "
-                        + "(SELECT id FROM categories WHERE productid=(SELECT id FROM products WHERE name='" + productName
+                        + "(SELECT id FROM categories WHERE productid=(SELECT id FROM products WHERE name='" + _productName
                         + "')))";
                 var da = new NpgsqlDataAdapter(sql, conn);
                 ds.Reset();
                 da.Fill(ds);
-                dt = ds.Tables[0];
+                var dt = ds.Tables[0];
                 foreach (DataRow row in dt.Rows)
                 {
-                    int id = (int)row.ItemArray.GetValue(0);
-                    string name = (string)row.ItemArray.GetValue(1);
+                    var id = (int)row.ItemArray.GetValue(0);
+                    var name = (string)row.ItemArray.GetValue(1);
                     keys.Add(id, name);
                 }
 
                 var rowNumbersAndIds = new Dictionary<int, int>();
                 sql = "SELECT id, \"order\" FROM rows WHERE tableid="
-                        + "(SELECT id FROM tables WHERE classname='" + tableName
+                        + "(SELECT id FROM tables WHERE classname='" + _tableName
                         + "' AND type=(SELECT id FROM tabletypes WHERE name='storage') AND categoryid IN "
-                        + "(SELECT id FROM categories WHERE productid=(SELECT id FROM products WHERE name='" + productName
+                        + "(SELECT id FROM categories WHERE productid=(SELECT id FROM products WHERE name='" + _productName
                         + "'))) AND \"order\" IN (" + String.Join(",", iterationNumbers) + ") ORDER BY \"order\"";
                 da = new NpgsqlDataAdapter(sql, conn);
                 ds.Reset();
@@ -220,8 +205,8 @@ namespace PineAdaptor
                 dt = ds.Tables[0];
                 foreach (DataRow row in dt.Rows)
                 {
-                    int id = (int)row.ItemArray.GetValue(0);
-                    int order = (int)row.ItemArray.GetValue(1);
+                    var id = (int)row.ItemArray.GetValue(0);
+                    var order = (int)row.ItemArray.GetValue(1);
                     rowNumbersAndIds.Add(id, order);
                 }
 
@@ -235,8 +220,8 @@ namespace PineAdaptor
                     dt = ds.Tables[0];
                     foreach (DataRow row in dt.Rows)
                     {
-                        int keyId = (int)row.ItemArray.GetValue(0);
-                        string value = (string)row.ItemArray.GetValue(1);
+                        var keyId = (int)row.ItemArray.GetValue(0);
+                        var value = (string)row.ItemArray.GetValue(1);
                         iterRow.Add(keys[keyId], value);
                     }
                     result.Add(rowNumbersAndIds[rowId], iterRow);
@@ -246,7 +231,7 @@ namespace PineAdaptor
             }
             catch (Exception e)
             {
-                PineSettings.ErHandler.OnAdaptorFail(e);
+                GribleSettings.ErHandler.OnAdaptorFail(e);
             }
             return result;
         }
@@ -255,11 +240,11 @@ namespace PineAdaptor
         {
             if (Connection == null)
             {
-                string dbhost = PineSettings.Dbhost;
-                string dbport = PineSettings.Dbport;
-                string dbName = PineSettings.Dbname;
-                string dblogin = PineSettings.Dblogin;
-                string dbpswd = PineSettings.Dbpswd;
+                string dbhost = GribleSettings.Dbhost;
+                string dbport = GribleSettings.Dbport;
+                string dbName = GribleSettings.Dbname;
+                string dblogin = GribleSettings.Dblogin;
+                string dbpswd = GribleSettings.Dbpswd;
 
                 string connstring = String.Format("Server={0};Port={1};" +
                                 "User Id={2};Password={3};Database={4};",

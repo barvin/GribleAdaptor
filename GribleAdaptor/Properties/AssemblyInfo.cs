@@ -1,15 +1,14 @@
 ﻿using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("PineAdaptor")]
-[assembly: AssemblyDescription("Pine adaptor library for C# frameworks.")]
+[assembly: AssemblyTitle("GribleAdaptor")]
+[assembly: AssemblyDescription("Grible adaptor library for C# frameworks.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Pine")]
-[assembly: AssemblyProduct("PineAdaptor")]
+[assembly: AssemblyCompany("Grible")]
+[assembly: AssemblyProduct("GribleAdaptor")]
 [assembly: AssemblyCopyright("Copyright © Maksym Barvinskyi 2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

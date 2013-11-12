@@ -1,31 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
-namespace PineAdaptor
+namespace GribleAdaptor
 {
     /// <summary>
-    /// Class that contains methods for retrieving data from pine Data Storages and transform it to descriptors objects.
+    /// Class that contains methods for retrieving data from grible Data Storages and transform it to descriptors objects.
     /// </summary>
     public class DataStorage
     {
         /// <summary>
-        /// Retrieves data from pine Data Storage and transforms it to descriptors objects.
+        /// Retrieves data from grible Data Storage and transforms it to descriptors objects.
         /// </summary>
         /// <typeparam name="T">class of the descriptor (i.e. UserInfo)</typeparam>
         /// <returns>List of all the specified descriptors found in the storage.</returns>
         public static List<T> GetDescriptors<T>()
         {
-            List<Dictionary<string, string>> allParameters = new TestTable(typeof(T).Name).GetDataStorageValues();
-            List<T> descriptors = new List<T>();
-            for (int i = 0; i < allParameters.Count; i++)
-            {
-                descriptors.Add((T)Activator.CreateInstance(typeof(T), allParameters[i]));
-            }
-            return descriptors;
+            var allParameters = new TestTable(typeof(T).Name).GetDataStorageValues();
+            return allParameters.Select(t => (T) Activator.CreateInstance(typeof (T), t)).ToList();
         }
 
         /// <summary>
-        /// Retrieves data from pine Data Storage and transforms it to descriptors objects.
+        /// Retrieves data from grible Data Storage and transforms it to descriptors objects.
         /// </summary>
         /// <typeparam name="T">class of the descriptor (i.e. UserInfo)</typeparam>
         /// <param name="indexes">rows indexes of the descriptors to retrieve (i.e. "5", "1;2;2;7"); "0" index in multiple indexes ("1;0;7") is not allowed</param>
@@ -36,7 +32,7 @@ namespace PineAdaptor
         }
 
         /// <summary>
-        /// Retrieves data from pine Data Storage and transforms it to descriptors objects.
+        /// Retrieves data from grible Data Storage and transforms it to descriptors objects.
         /// </summary>
         /// <typeparam name="T">class of the descriptor (i.e. UserInfo)</typeparam>
         /// <param name="indexes">rows indexes of the descriptors to retrieve (i.e. "5", "1;2;2;7"); "0" index in multiple indexes ("1;0;7") is not allowed</param>
@@ -44,7 +40,7 @@ namespace PineAdaptor
         /// <returns>List of the descriptors with specified row numbers found in the storage.</returns>
         public static List<T> GetDescriptors<T>(string indexes, bool allowEmpty)
         {
-            List<T> result = new List<T>();
+            var result = new List<T>();
             if (allowEmpty)
             {
                 int[] iterationNumbers = { 0 };
@@ -53,47 +49,45 @@ namespace PineAdaptor
                     iterationNumbers = GetIntArrayFromString(indexes);
                 }
                 var rows = new TestTable(typeof(T).Name).GetDataStorageValues(iterationNumbers);
-                for (int i = 0; i < iterationNumbers.Length; i++)
+                foreach (var i in iterationNumbers)
                 {
                     object descriptor = null;
                     try
                     {
-                        if (iterationNumbers[i] == 0)
+                        if (i == 0)
                         {
                             descriptor = (T)Activator.CreateInstance(typeof(T), new Dictionary<string, string>());
                         }
                         else
                         {
-                            descriptor = (T)Activator.CreateInstance(typeof(T), rows[iterationNumbers[i]]);
+                            descriptor = (T)Activator.CreateInstance(typeof(T), rows[i]);
                         }
                     }
                     catch (Exception e)
                     {
-                        PineSettings.ErHandler.OnAdaptorFail(new Exception("DataStorage exception: " + e.Message
-                                    + ". Happened during creating a descriptor: " + typeof(T).Name + " # "
-                                    + iterationNumbers[i]));
+                        GribleSettings.ErHandler.OnAdaptorFail(new Exception("DataStorage exception: " + e.Message
+                                                                             + ". Happened during creating a descriptor: " + typeof(T).Name + " # "
+                                                                             + i));
                     }
                     result.Add((T)descriptor);
                 }
             }
             else
             {
-                if ((!("0").Equals(indexes)) && (indexes != null))
+                if ((("0").Equals(indexes)) || (indexes == null)) return result;
+                var iterationNumbers = GetIntArrayFromString(indexes);
+                var rows = new TestTable(typeof(T).Name).GetDataStorageValues(iterationNumbers);
+                foreach (var i in iterationNumbers)
                 {
-                    int[] iterationNumbers = GetIntArrayFromString(indexes);
-                    var rows = new TestTable(typeof(T).Name).GetDataStorageValues(iterationNumbers);
-                    for (int i = 0; i < iterationNumbers.Length; i++)
+                    try
                     {
-                        try
-                        {
-                            result.Add((T)Activator.CreateInstance(typeof(T), rows[iterationNumbers[i]]));
-                        }
-                        catch (Exception e)
-                        {
-                            PineSettings.ErHandler.OnAdaptorFail(new Exception("DataStorage exception: " + e.Message
-                                    + ". Happened during creating a descriptor: " + typeof(T).Name + " # "
-                                    + iterationNumbers[i]));
-                        }
+                        result.Add((T)Activator.CreateInstance(typeof(T), rows[i]));
+                    }
+                    catch (Exception e)
+                    {
+                        GribleSettings.ErHandler.OnAdaptorFail(new Exception("DataStorage exception: " + e.Message
+                                                                             + ". Happened during creating a descriptor: " + typeof(T).Name + " # "
+                                                                             + i));
                     }
                 }
             }
@@ -101,14 +95,14 @@ namespace PineAdaptor
         }
 
         /// <summary>
-        /// Retrieves data from pine Data Storage and transforms it to the single descriptor object.
+        /// Retrieves data from grible Data Storage and transforms it to the single descriptor object.
         /// </summary>
         /// <typeparam name="T">class of the descriptor (i.e. UserInfo)</typeparam>
         /// <param name="index">row index of the descriptor to retrieve (i.e. "1", "5"); if "0", returns an empty descriptor.</param>
         /// <returns>Descriptor for specified row number found in the storage or an empty (which all properties are null) descriptor.</returns>
         public static T GetDescriptor<T>(string index)
         {
-            List<T> descriptors = GetDescriptors<T>(index, true);
+            var descriptors = GetDescriptors<T>(index, true);
             if (descriptors.Count == 0)
             {
                 return (T)Activator.CreateInstance(typeof(T), new Dictionary<string, string>());
@@ -118,9 +112,9 @@ namespace PineAdaptor
 
         private static int[] GetIntArrayFromString(String allElements)
         {
-            String[] tempArray = allElements.Split(';');
-            int[] resultArray = new int[tempArray.Length];
-            for (int i = 0; i < tempArray.Length; i++)
+            var tempArray = allElements.Split(';');
+            var resultArray = new int[tempArray.Length];
+            for (var i = 0; i < tempArray.Length; i++)
             {
                 resultArray[i] = int.Parse(tempArray[i]);
             }

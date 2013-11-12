@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2012 for Windows Desktop
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PineAdaptor", "PineAdaptor\PineAdaptor.csproj", "{9762C8AE-AD4F-4609-BEDF-62806408F0BF}"
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GribleAdaptor", "GribleAdaptor\GribleAdaptor.csproj", "{9762C8AE-AD4F-4609-BEDF-62806408F0BF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

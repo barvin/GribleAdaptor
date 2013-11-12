@@ -7,8 +7,8 @@
     <ProjectGuid>{9762C8AE-AD4F-4609-BEDF-62806408F0BF}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>PineAdaptor</RootNamespace>
-    <AssemblyName>PineAdaptor</AssemblyName>
+    <RootNamespace>GribleAdaptor</RootNamespace>
+    <AssemblyName>GribleAdaptor</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -48,7 +48,7 @@
     <Compile Include="DataStorage.cs" />
     <Compile Include="Errors\IErrorsHandler.cs" />
     <Compile Include="Errors\SimpleErrorsHandler.cs" />
-    <Compile Include="PineSettings.cs" />
+    <Compile Include="GribleSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestTable.cs" />
   </ItemGroup>

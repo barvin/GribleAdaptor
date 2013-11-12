@@ -1,6 +1,6 @@
 ﻿
 using System;
-namespace PineAdaptor.Errors
+namespace GribleAdaptor.Errors
 {
     public class SimpleErrorsHandler : IErrorsHandler
     {

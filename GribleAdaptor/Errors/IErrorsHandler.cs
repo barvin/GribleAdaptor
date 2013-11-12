@@ -1,9 +1,9 @@
 ﻿using System;
 
-namespace PineAdaptor.Errors
+namespace GribleAdaptor.Errors
 {
     /// <summary>
-    /// The interface for the handlers of exceptions that occur in the pine adaptor.
+    /// The interface for the handlers of exceptions that occur in the grible adaptor.
     /// </summary>
     public interface IErrorsHandler
     {
