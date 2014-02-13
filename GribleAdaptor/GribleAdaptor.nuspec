@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>GribleAdaptor</id>
+    <version>$version$</version>
+    <title>GribleAdaptor</title>
+    <authors>Maksym Barvinskyi</authors>
+    <owners>Maksym Barvinskyi</owners>
+    <licenseUrl>http://www.gnu.org/licenses/gpl-2.0.html</licenseUrl>
+    <projectUrl>http://www.grible.org</projectUrl>
+    <iconUrl>http://grible.org/img/logo.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Grible adaptor library for C# based automation frameworks</description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright 2013 - 2014</copyright>
+    <tags>Automation Grible Test Data</tags>
+  </metadata>
+</package>
