@@ -24,6 +24,8 @@ namespace GribleAdaptor
         }
 
         public static string ProductName { get; set; }
+        public static string ProductPath { get; set; }
+        public static AppTypes AppType { get; set; }
         internal static string Dbhost { get; set; }
         internal static string Dbport { get; set; }
         internal static string Dbname { get; set; }
