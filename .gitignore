@@ -74,3 +74,4 @@ Backup*/
 UpgradeLog*.XML
 *.exe
 /packages
+/GribleAdaptor/*.nupkg
