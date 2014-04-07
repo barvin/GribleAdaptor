@@ -1,6 +1,6 @@
 ﻿namespace GribleAdaptor.Json
 {
-    class KeyJson
+    class Key
     {
         public string Name { get; set; }
         public string Type { get; set; }

@@ -5,6 +5,7 @@ using System.Data;
 using Npgsql;
 using GribleAdaptor.Helpers;
 using GribleAdaptor.Json;
+using Newtonsoft.Json;
 
 namespace GribleAdaptor
 {
@@ -58,23 +59,30 @@ namespace GribleAdaptor
                     var conn = GetConnection();
                     conn.Open();
 
-                    var sql = ("SELECT k.name, v.value FROM keys as k JOIN values as v "
-                        + "ON v.keyid=k.id AND k.tableid =(SELECT id FROM tables WHERE type="
-                        + "(SELECT id FROM tabletypes WHERE name='" + subTableType + "') AND parentid="
-                        + "(SELECT id FROM tables WHERE name='" + _tableName + "' AND categoryid IN "
-                        + "(SELECT id FROM categories WHERE productid=" + "(SELECT id FROM products WHERE name='"
-                        + _productName + "') AND type=(SELECT id FROM tabletypes WHERE name='table'))))");
+                    var sql = ("SELECT t.keys, t.values" + "FROM tables t "
+                        + "INNER JOIN tabletypes tt ON t.type = tt.id " + "INNER JOIN tables pt ON t.parentid=pt.id "
+                        + "INNER JOIN categories c ON pt.categoryid=c.id "
+                        + "INNER JOIN products p ON c.productid=p.id "
+                        + "INNER JOIN tabletypes ctt ON c.type = ctt.id " + "WHERE tt.name='" + subTableType
+                        + "' AND pt.name='" + _tableName + "' AND p.name='" + _productName + "' AND ctt.name='table'");
 
                     var da = new NpgsqlDataAdapter(sql, conn);
                     ds.Reset();
                     da.Fill(ds);
                     var dt = ds.Tables[0];
 
+                    var strKeys = "";
+                    var strValues = "";
                     foreach (DataRow row in dt.Rows)
                     {
-                        var keyId = (string)row.ItemArray.GetValue(0);
-                        var value = (string)row.ItemArray.GetValue(1);
-                        result.Add(keyId, value);
+                        strKeys = (string)row.ItemArray.GetValue(0);
+                        strValues = (string)row.ItemArray.GetValue(1);
+                    }
+                    Key[] keys = JsonConvert.DeserializeObject<Key[]>(strKeys);
+                    string[][] values = JsonConvert.DeserializeObject<string[][]>(strValues);
+                    for (int j = 0; j < values[0].Length; j++)
+                    {
+                        result.Add(keys[j].Name, values[0][j]);
                     }
                     conn.Close();
                 }
@@ -87,7 +95,7 @@ namespace GribleAdaptor
                         throw new Exception("File '" + fileName + "' not found in directory '" + _productPath + "\\" + "TestTables" + "'.");
                     }
                     TableJson tableJson = IOHelper.ParseTableJson(filePath);
-                    KeyJson[] keys = tableJson.Keys;
+                    Key[] keys = tableJson.Keys;
                     string[][] values = tableJson.Values;
                     for (int j = 0; j < values[0].Length; j++)
                     {
@@ -135,49 +143,37 @@ namespace GribleAdaptor
 
                     var ds = new DataSet();
 
-                    var keys = new Dictionary<int, string>();
-                    var sql = "SELECT id, name FROM keys WHERE tableid="
-                        + "(SELECT id FROM tables WHERE " + nameColumn + "='" + _tableName + "' AND type="
-                        + "(SELECT id FROM tabletypes WHERE name='" + entityType + "') AND categoryid IN "
-                        + "(SELECT id FROM categories WHERE productid=(SELECT id FROM products WHERE name='" + _productName
-                        + "')))";
+                    var sql = "SELECT t.keys, t.values " + "FROM tables t "
+                        + "INNER JOIN tabletypes tt ON t.type = tt.id "
+                        + "INNER JOIN categories c ON t.categoryid=c.id "
+                        + "INNER JOIN products p ON c.productid=p.id "
+                        + "INNER JOIN tabletypes ctt ON c.type = ctt.id " + "WHERE tt.name='" + entityType + "' AND t."
+                        + nameColumn + "='" + _tableName + "' AND p.name='" + _productName + "'";
                     var da = new NpgsqlDataAdapter(sql, conn);
                     ds.Reset();
                     da.Fill(ds);
                     var dt = ds.Tables[0];
+
+                    var strKeys = "";
+                    var strValues = "";
+                    
                     foreach (DataRow row in dt.Rows)
                     {
-                        var id = (int)row.ItemArray.GetValue(0);
-                        var name = (string)row.ItemArray.GetValue(1);
-                        keys.Add(id, name);
+                        strKeys = (string)row.ItemArray.GetValue(0);
+                        strValues = (string)row.ItemArray.GetValue(1);
                     }
 
-                    sql = "SELECT id FROM rows WHERE tableid=" + "(SELECT id FROM tables WHERE " + nameColumn
-                        + "='" + _tableName + "' AND type=" + "(SELECT id FROM tabletypes WHERE name='" + entityType
-                        + "') AND categoryid IN " + "(SELECT id FROM categories WHERE productid="
-                        + "(SELECT id FROM products WHERE name='" + _productName + "'))) ORDER BY \"order\"";
-                    da = new NpgsqlDataAdapter(sql, conn);
-                    ds.Reset();
-                    da.Fill(ds);
-                    dt = ds.Tables[0];
-                    var rowIds = (from DataRow row in dt.Rows select (int)row.ItemArray.GetValue(0)).ToList();
+                    Key[] keys = JsonConvert.DeserializeObject<Key[]>(strKeys);
+                    string[][] values = JsonConvert.DeserializeObject<string[][]>(strValues);
 
-                    foreach (var rowId in rowIds)
+                    for (int i = 0; i < values.Length; i++)
                     {
-                        var iterRow = new Dictionary<string, string>();
-
-                        sql = "SELECT keyid, value FROM values WHERE rowid=" + rowId;
-                        da = new NpgsqlDataAdapter(sql, conn);
-                        ds.Reset();
-                        da.Fill(ds);
-                        dt = ds.Tables[0];
-                        foreach (DataRow row in dt.Rows)
+                        var row = new Dictionary<string, string>();
+                        for (int j = 0; j < values[0].Length; j++)
                         {
-                            var keyId = (int)row.ItemArray.GetValue(0);
-                            var value = (string)row.ItemArray.GetValue(1);
-                            iterRow.Add(keys[keyId], value);
+                            row.Add(keys[j].Name, values[i][j]);
                         }
-                        result.Add(iterRow);
+                        result.Add(row);
                     }
 
                     conn.Close();
@@ -209,7 +205,7 @@ namespace GribleAdaptor
                         }
                     }
                     TableJson tableJson = IOHelper.ParseTableJson(filePath);
-                    KeyJson[] keys = tableJson.Keys;
+                    Key[] keys = tableJson.Keys;
                     string[][] values = tableJson.Values;
                     for (int i = 0; i < values.Length; i++)
                     {
@@ -244,56 +240,38 @@ namespace GribleAdaptor
                     conn.Open();
                     var ds = new DataSet();
 
-                    var keys = new Dictionary<int, string>();
-                    string sql = "SELECT id, name FROM keys WHERE tableid="
-                            + "(SELECT id FROM tables WHERE classname='" + _tableName + "' AND type="
-                            + "(SELECT id FROM tabletypes WHERE name='storage') AND categoryid IN "
-                            + "(SELECT id FROM categories WHERE productid=(SELECT id FROM products WHERE name='" + _productName
-                            + "')))";
+                    string sql = "SELECT t.keys, t.values " + "FROM tables t "
+                        + "INNER JOIN tabletypes tt ON t.type = tt.id "
+                        + "INNER JOIN categories c ON t.categoryid=c.id "
+                        + "INNER JOIN products p ON c.productid=p.id "
+                        + "INNER JOIN tabletypes ctt ON c.type = ctt.id " + "WHERE tt.name='storage' AND t.classname='"
+                        + _tableName + "' AND p.name='" + _productName + "'";
                     var da = new NpgsqlDataAdapter(sql, conn);
                     ds.Reset();
                     da.Fill(ds);
                     var dt = ds.Tables[0];
+
+                    var strKeys = "";
+                    var strValues = "";
+
                     foreach (DataRow row in dt.Rows)
                     {
-                        var id = (int)row.ItemArray.GetValue(0);
-                        var name = (string)row.ItemArray.GetValue(1);
-                        keys.Add(id, name);
+                        strKeys = (string)row.ItemArray.GetValue(0);
+                        strValues = (string)row.ItemArray.GetValue(1);
                     }
 
-                    var rowNumbersAndIds = new Dictionary<int, int>();
-                    sql = "SELECT id, \"order\" FROM rows WHERE tableid="
-                            + "(SELECT id FROM tables WHERE classname='" + _tableName
-                            + "' AND type=(SELECT id FROM tabletypes WHERE name='storage') AND categoryid IN "
-                            + "(SELECT id FROM categories WHERE productid=(SELECT id FROM products WHERE name='" + _productName
-                            + "'))) AND \"order\" IN (" + String.Join(",", iterationNumbers) + ") ORDER BY \"order\"";
-                    da = new NpgsqlDataAdapter(sql, conn);
-                    ds.Reset();
-                    da.Fill(ds);
-                    dt = ds.Tables[0];
-                    foreach (DataRow row in dt.Rows)
+                    Key[] keys = JsonConvert.DeserializeObject<Key[]>(strKeys);
+                    string[][] values = JsonConvert.DeserializeObject<string[][]>(strValues);
+                    int[] iterNumbers = (int[])iterationNumbers;
+                    for (int i = 0; i < iterNumbers.Length; i++)
                     {
-                        var id = (int)row.ItemArray.GetValue(0);
-                        var order = (int)row.ItemArray.GetValue(1);
-                        rowNumbersAndIds.Add(id, order);
-                    }
-
-                    foreach (int rowId in rowNumbersAndIds.Keys)
-                    {
-                        var iterRow = new Dictionary<string, string>();
-                        sql = "SELECT keyid, value FROM values WHERE rowid=" + rowId;
-                        da = new NpgsqlDataAdapter(sql, conn);
-                        ds.Reset();
-                        da.Fill(ds);
-                        dt = ds.Tables[0];
-                        foreach (DataRow row in dt.Rows)
+                        var row = new Dictionary<string, string>();
+                        for (int j = 0; j < values[0].Length; j++)
                         {
-                            var keyId = (int)row.ItemArray.GetValue(0);
-                            var value = (string)row.ItemArray.GetValue(1);
-                            iterRow.Add(keys[keyId], value);
+                            row.Add(keys[j].Name, values[iterNumbers[i] - 1][j]);
                         }
-                        result.Add(rowNumbersAndIds[rowId], iterRow);
-                    }
+                        result.Add(iterNumbers[i], row);
+                    }                    
 
                     conn.Close();
                 }
@@ -309,7 +287,7 @@ namespace GribleAdaptor
                                 + _productPath + "\\" + sectionDir + "'.");
                     }
                     TableJson tableJson = IOHelper.ParseTableJson(filePath);
-                    KeyJson[] keys = tableJson.Keys;
+                    Key[] keys = tableJson.Keys;
                     string[][] values = tableJson.Values;
                     int[] iterNumbers = (int[])iterationNumbers;
                     for (int i = 0; i < iterNumbers.Length; i++)
