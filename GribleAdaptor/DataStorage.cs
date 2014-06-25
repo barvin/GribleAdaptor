@@ -80,7 +80,7 @@ namespace GribleAdaptor
 
         private static void CreateDescriptorsEntryWithEmptyDescriptor<T>()
         {
-            if (descriptors[typeof(T)] == null)
+            if (!descriptors.ContainsKey(typeof(T)))
             {
                 SortedList<int, object> map = new SortedList<int, object>();
                 map.Add(0, CreateEmptyDescriptor<T>());
