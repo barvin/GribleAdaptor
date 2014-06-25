@@ -59,7 +59,7 @@ namespace GribleAdaptor
                     var conn = GetConnection();
                     conn.Open();
 
-                    var sql = ("SELECT t.keys, t.values" + "FROM tables t "
+                    var sql = ("SELECT t.keys, t.values FROM tables t "
                         + "INNER JOIN tabletypes tt ON t.type = tt.id " + "INNER JOIN tables pt ON t.parentid=pt.id "
                         + "INNER JOIN categories c ON pt.categoryid=c.id "
                         + "INNER JOIN products p ON c.productid=p.id "
@@ -78,13 +78,21 @@ namespace GribleAdaptor
                         strKeys = (string)row.ItemArray.GetValue(0);
                         strValues = (string)row.ItemArray.GetValue(1);
                     }
-                    Key[] keys = JsonConvert.DeserializeObject<Key[]>(strKeys);
-                    string[][] values = JsonConvert.DeserializeObject<string[][]>(strValues);
-                    for (int j = 0; j < values[0].Length; j++)
-                    {
-                        result.Add(keys[j].Name, values[0][j]);
-                    }
                     conn.Close();
+
+                    if (!"".Equals(strKeys) && !"".Equals(strValues))
+                    {
+                        Key[] keys = JsonConvert.DeserializeObject<Key[]>(strKeys);
+                        string[][] values = JsonConvert.DeserializeObject<string[][]>(strValues);
+                        for (int j = 0; j < values[0].Length; j++)
+                        {
+                            result.Add(keys[j].Name, values[0][j]);
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception(subTableType + "s in the table '" + _tableName + "' not found in product '" + _productName + "'.");
+                    }
                 }
                 else
                 {
@@ -156,27 +164,33 @@ namespace GribleAdaptor
 
                     var strKeys = "";
                     var strValues = "";
-                    
+
                     foreach (DataRow row in dt.Rows)
                     {
                         strKeys = (string)row.ItemArray.GetValue(0);
                         strValues = (string)row.ItemArray.GetValue(1);
                     }
-
-                    Key[] keys = JsonConvert.DeserializeObject<Key[]>(strKeys);
-                    string[][] values = JsonConvert.DeserializeObject<string[][]>(strValues);
-
-                    for (int i = 0; i < values.Length; i++)
-                    {
-                        var row = new Dictionary<string, string>();
-                        for (int j = 0; j < values[0].Length; j++)
-                        {
-                            row.Add(keys[j].Name, values[i][j]);
-                        }
-                        result.Add(row);
-                    }
-
                     conn.Close();
+
+                    if (!"".Equals(strKeys) && !"".Equals(strValues))
+                    {
+                        Key[] keys = JsonConvert.DeserializeObject<Key[]>(strKeys);
+                        string[][] values = JsonConvert.DeserializeObject<string[][]>(strValues);
+
+                        for (int i = 0; i < values.Length; i++)
+                        {
+                            var row = new Dictionary<string, string>();
+                            for (int j = 0; j < values[0].Length; j++)
+                            {
+                                row.Add(keys[j].Name, values[i][j]);
+                            }
+                            result.Add(row);
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception(entityType + " with name '" + _tableName + "' not found in product '" + _productName + "'.");
+                    }
                 }
                 else
                 {
@@ -259,21 +273,27 @@ namespace GribleAdaptor
                         strKeys = (string)row.ItemArray.GetValue(0);
                         strValues = (string)row.ItemArray.GetValue(1);
                     }
-
-                    Key[] keys = JsonConvert.DeserializeObject<Key[]>(strKeys);
-                    string[][] values = JsonConvert.DeserializeObject<string[][]>(strValues);
-                    int[] iterNumbers = (int[])iterationNumbers;
-                    for (int i = 0; i < iterNumbers.Length; i++)
-                    {
-                        var row = new Dictionary<string, string>();
-                        for (int j = 0; j < values[0].Length; j++)
-                        {
-                            row.Add(keys[j].Name, values[iterNumbers[i] - 1][j]);
-                        }
-                        result.Add(iterNumbers[i], row);
-                    }                    
-
                     conn.Close();
+
+                    if (!"".Equals(strKeys) && !"".Equals(strValues))
+                    {
+                        Key[] keys = JsonConvert.DeserializeObject<Key[]>(strKeys);
+                        string[][] values = JsonConvert.DeserializeObject<string[][]>(strValues);
+                        int[] iterNumbers = (int[])iterationNumbers;
+                        for (int i = 0; i < iterNumbers.Length; i++)
+                        {
+                            var row = new Dictionary<string, string>();
+                            for (int j = 0; j < values[0].Length; j++)
+                            {
+                                row.Add(keys[j].Name, values[iterNumbers[i] - 1][j]);
+                            }
+                            result.Add(iterNumbers[i], row);
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception("Storage with name '" + _tableName + "' not found in product '" + _productName + "'.");
+                    }
                 }
                 else
                 {
