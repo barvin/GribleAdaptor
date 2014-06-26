@@ -8,7 +8,7 @@ namespace GribleAdaptor
     /// </summary>
     public abstract class BaseDescriptor
     {
-        private readonly Dictionary<string, string> _data;
+        private Dictionary<string, string> _data;
 
         /// <summary>
         /// Is the descriptor empty of not? Empty descriptor could be created by setting "0" value in Grible. All the properties of empty descriptor are null.

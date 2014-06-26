@@ -33,10 +33,9 @@ namespace GribleAdaptor
             var rows = new TestTable(typeof(T).Name).GetDataStorageValues(indexes);
             foreach (var i in indexes)
             {
-                object value = map[i];
-                if (value != null)
+                if (map.ContainsKey(i))
                 {
-                    result.Add((T)value);
+                    result.Add((T)map[i]);
                     continue;
                 }
                 object descriptor = null;
@@ -139,8 +138,12 @@ namespace GribleAdaptor
             return (list.Count == 0) ? CreateEmptyDescriptor<T>() : list[0];
         }
 
-        private static int[] GetIntArrayFromString(String allElements)
+        private static int[] GetIntArrayFromString(string allElements)
         {
+            if (("").Equals(allElements) || (allElements == null))
+            {
+                return new int[] { 0 };
+            }
             var tempArray = allElements.Split(';');
             var resultArray = new int[tempArray.Length];
             for (var i = 0; i < tempArray.Length; i++)
