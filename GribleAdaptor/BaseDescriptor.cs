@@ -33,7 +33,7 @@ namespace GribleAdaptor
             if (_data == null) return null;
             if (!_data.ContainsKey(key))
             {
-                GribleSettings.ErHandler.OnAdaptorFail(new Exception("Descriptor error: key '" + key + "' not found. HashMap: " + _data + "."));
+                GribleSettings.ErHandler.OnAdaptorFail(new Exception("Descriptor error: key '" + key + "' not found. Dictionary: " + _data + "."));
             }
             return _data[key];
         }
@@ -43,7 +43,7 @@ namespace GribleAdaptor
             if (_data == null) return false;
             if (!_data.ContainsKey(key))
             {
-                GribleSettings.ErHandler.OnAdaptorFail(new Exception("Descriptor error: key '" + key + "' not found. HashMap: " + _data + "."));
+                GribleSettings.ErHandler.OnAdaptorFail(new Exception("Descriptor error: key '" + key + "' not found. Dictionary: " + _data + "."));
             }
             return Boolean.Parse(_data[key]);
         }
@@ -53,9 +53,19 @@ namespace GribleAdaptor
             if (_data == null) return 0;
             if (!_data.ContainsKey(key))
             {
-                GribleSettings.ErHandler.OnAdaptorFail(new Exception("Descriptor error: key '" + key + "' not found. HashMap: " + _data + "."));
+                GribleSettings.ErHandler.OnAdaptorFail(new Exception("Descriptor error: key '" + key + "' not found. Dictionary: " + _data + "."));
             }
             return Convert.ToInt32(_data[key]);
+        }
+
+        public T GetEnum<T>(string key)
+        {
+            if (_data == null) return default(T);
+            if (!_data.ContainsKey(key))
+            {
+                GribleSettings.ErHandler.OnAdaptorFail(new Exception("Descriptor error: key '" + key + "' not found. Dictionary: " + _data + "."));
+            }
+            return (T)Enum.Parse(typeof(T), _data[key]);
         }
     }
 }
